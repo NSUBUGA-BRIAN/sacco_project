@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+{% block title %}{{ loan.loan_id }}{% endblock %}
+{% block page_title %}Loan {{ loan.loan_id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 style="font-family: monospace;">{{ loan.loan_id }}</h1>
+        <p>Applied {{ loan.application_date|date:"d F Y, H:i" }}</p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <span class="status-badge badge-{{ loan.status }}" style="font-size:13px; padding:7px 16px;">
+            {{ loan.get_status_display }}
+        </span>
+        <a href="{% url 'loans:list' %}" class="btn-ghost"><i class="bi bi-arrow-left"></i> Back</a>
+    </div>
+</div>
+
+<!-- Workflow Tracker -->
+<div class="content-card mb-4">
+    <div class="card-body-custom">
+        <div style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">
+            Loan Workflow Progress
+        </div>
+        <div class="workflow-steps" style="flex-wrap: wrap; gap: 8px;">
+            {% with current=loan.status %}
+
+            {% comment %}Draft{% endcomment %}
+            <div class="workflow-step {% if current == 'draft' %}step-active{% elif current == 'rejected' or current == 'submitted' or current == 'under_review' or current == 'approved' or current == 'disbursed' or current == 'completed' %}step-done{% else %}step-pending{% endif %}">
+                <div class="step-circle">{% if current != 'draft' %}<i class="bi bi-check"></i>{% else %}1{% endif %}</div>
+                <div class="step-label">Draft</div>
+            </div>
+            <div class="step-connector {% if current != 'draft' %}done{% endif %}"></div>
+
+            {% comment %}Submitted{% endcomment %}
+            <div class="workflow-step {% if current == 'submitted' %}step-active{% elif current == 'under_review' or current == 'approved' or current == 'disbursed' or current == 'completed' %}step-done{% else %}step-pending{% endif %}">
+                <div class="step-circle">{% if current == 'under_review' or current == 'approved' or current == 'disbursed' or current == 'completed' %}<i class="bi bi-check"></i>{% else %}2{% endif %}</div>
+                <div class="step-label">Submitted</div>
+            </div>
+            <div class="step-connector {% if current == 'under_review' or current == 'approved' or current == 'disbursed' or current == 'completed' %}done{% endif %}"></div>
+
+            {% comment %}Under Review{% endcomment %}
+            <div class="workflow-step {% if current == 'under_review' %}step-active{% elif current == 'approved' or current == 'disbursed' or current == 'completed' %}step-done{% elif current == 'rejected' %}step-rejected{% else %}step-pending{% endif %}">
+                <div class="step-circle">{% if current == 'approved' or current == 'disbursed' or current == 'completed' %}<i class="bi bi-check"></i>{% elif current == 'rejected' %}<i class="bi bi-x"></i>{% else %}3{% endif %}</div>
+                <div class="step-label">Under Review</div>
+            </div>
+            <div class="step-connector {% if current == 'approved' or current == 'disbursed' or current == 'completed' %}done{% endif %}"></div>
+
+            {% comment %}Approved{% endcomment %}
+            <div class="workflow-step {% if current == 'approved' %}step-active{% elif current == 'disbursed' or current == 'completed' %}step-done{% else %}step-pending{% endif %}">
+                <div class="step-circle">{% if current == 'disbursed' or current == 'completed' %}<i class="bi bi-check"></i>{% else %}4{% endif %}</div>
+                <div class="step-label">Approved</div>
+            </div>
+            <div class="step-connector {% if current == 'disbursed' or current == 'completed' %}done{% endif %}"></div>
+
+            {% comment %}Disbursed{% endcomment %}
+            <div class="workflow-step {% if current == 'disbursed' %}step-active{% elif current == 'completed' %}step-done{% else %}step-pending{% endif %}">
+                <div class="step-circle">{% if current == 'completed' %}<i class="bi bi-check"></i>{% else %}5{% endif %}</div>
+                <div class="step-label">Disbursed</div>
+            </div>
+            <div class="step-connector {% if current == 'completed' %}done{% endif %}"></div>
+
+            {% comment %}Completed{% endcomment %}
+            <div class="workflow-step {% if current == 'completed' %}step-done{% else %}step-pending{% endif %}">
+                <div class="step-circle">{% if current == 'completed' %}<i class="bi bi-check"></i>{% else %}6{% endif %}</div>
+                <div class="step-label">Completed</div>
+            </div>
+
+            {% if loan.status == 'rejected' %}
+            <div style="width:100%; margin-top:8px;">
+                <div class="alert-sacco alert-danger-sacco" style="margin:0;">
+                    <i class="bi bi-x-circle"></i>
+                    <strong>Rejected:</strong> {{ loan.rejection_reason }}
+                </div>
+            </div>
+            {% endif %}
+
+            {% endwith %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Loan Information -->
+    <div class="col-lg-8">
+        <div class="content-card mb-4">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-info-circle me-2" style="color:#2563eb;"></i>Loan Information</h5>
+            </div>
+            <div class="card-body-custom">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Applicant</div>
+                        <div style="font-size:14px; font-weight:600;">{{ loan.applicant.get_full_name }}</div>
+                        <div style="font-size:12px; color:#94a3b8;">{{ loan.applicant.member_number }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Loan Type</div>
+                        <div style="font-size:14px; font-weight:600;">{{ loan.loan_type.name|default:"Standard Loan" }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Amount Requested</div>
+                        <div class="money" style="font-size:20px; font-weight:800; color:#1a3a5c;">
+                            UGX {{ loan.amount_requested|floatformat:0 }}
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Interest Rate</div>
+                        <div style="font-size:18px; font-weight:700;">{{ loan.interest_rate }}% p.a.</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Repayment Period</div>
+                        <div style="font-size:14px; font-weight:600;">{{ loan.repayment_period }} months</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Monthly Installment</div>
+                        <div class="money" style="font-size:14px; font-weight:700; color:#059669;">
+                            UGX {{ loan.monthly_installment|floatformat:0 }}
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Total Repayable</div>
+                        <div class="money" style="font-size:14px; font-weight:700;">
+                            UGX {{ loan.total_repayable|floatformat:0 }}
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Application Date</div>
+                        <div style="font-size:14px; font-weight:600;">{{ loan.application_date|date:"d M Y" }}</div>
+                    </div>
+                    {% if loan.disbursed_at %}
+                    <div class="col-sm-6">
+                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Disbursed On</div>
+                        <div style="font-size:14px; font-weight:600; color:#2563eb;">{{ loan.disbursed_at|date:"d M Y" }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="col-12">
+                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Purpose</div>
+                        <div style="font-size:14px; background:#f8fafc; padding:14px; border-radius:10px; line-height:1.6;">
+                            {{ loan.purpose }}
+                        </div>
+                    </div>
+                    {% if loan.notes %}
+                    <div class="col-12">
+                        <div style="font-size:12px; color:#64748b; margin-bottom:4px;">Admin Notes</div>
+                        <div style="font-size:13px; background:#fef3c7; padding:12px; border-radius:10px;">{{ loan.notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Repayment Schedule -->
+        {% if repayments %}
+        <div class="content-card mb-4">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-calendar3 me-2" style="color:#059669;"></i>Repayment Schedule</h5>
+                <a href="{% url 'repayments:loan_repayments' loan.pk %}" class="btn-ghost" style="font-size:12px; padding:6px 14px;">Full Schedule</a>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="sacco-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Due Date</th>
+                            <th>Amount Due</th>
+                            <th>Status</th>
+                            {% if user.is_admin %}<th>Action</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in repayments|slice:":6" %}
+                        <tr>
+                            <td style="font-weight:600;">{{ r.installment_number }}</td>
+                            <td style="font-size:13px;">{{ r.due_date|date:"d M Y" }}</td>
+                            <td class="money" style="font-weight:600;">UGX {{ r.amount_due|floatformat:0 }}</td>
+                            <td><span class="status-badge badge-{{ r.status }}">{{ r.get_status_display }}</span></td>
+                            {% if user.is_admin %}
+                            <td>
+                                {% if r.status != 'paid' %}
+                                <a href="{% url 'repayments:record_payment' r.pk %}" class="btn-ghost" style="font-size:11px; padding:4px 10px;">Record</a>
+                                {% else %}
+                                <span style="font-size:12px; color:#059669;"><i class="bi bi-check-circle"></i> Paid</span>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Audit Log -->
+        <div class="content-card">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-clock-history me-2" style="color:#64748b;"></i>Activity Log</h5>
+            </div>
+            <div class="card-body-custom">
+                {% for log in audit_logs %}
+                <div style="display:flex; gap:14px; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="bi bi-activity" style="color:#64748b; font-size:14px;"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:600;">{{ log.action }}</div>
+                        <div style="font-size:12px; color:#64748b; margin-top:2px;">
+                            By {{ log.performed_by.get_full_name|default:log.performed_by.username|default:"System" }}
+                            &nbsp;·&nbsp; {{ log.timestamp|date:"d M Y, H:i" }}
+                        </div>
+                        {% if log.notes %}
+                        <div style="font-size:12px; color:#475569; margin-top:4px; font-style:italic;">{{ log.notes }}</div>
+                        {% endif %}
+                    </div>
+                    {% if log.from_status and log.to_status %}
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                        <span class="status-badge badge-{{ log.from_status }}" style="font-size:10px;">{{ log.from_status|title }}</span>
+                        <i class="bi bi-arrow-right" style="color:#94a3b8; font-size:11px;"></i>
+                        <span class="status-badge badge-{{ log.to_status }}" style="font-size:10px;">{{ log.to_status|title }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div style="text-align:center; color:#94a3b8; padding:24px; font-size:13px;">No activity yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions Sidebar -->
+    <div class="col-lg-4">
+        <!-- Member Submit Action -->
+        {% if not user.is_admin and loan.status == 'draft' %}
+        <div class="content-card mb-4" style="border: 2px solid #dbeafe;">
+            <div class="card-header-custom" style="background:#eff6ff;">
+                <h5 style="color:#1d4ed8;"><i class="bi bi-send me-2"></i>Submit for Review</h5>
+            </div>
+            <div class="card-body-custom">
+                <p style="font-size:13px; color:#64748b; margin-bottom:16px;">
+                    Once submitted, your loan will be reviewed by our team. You cannot edit it after submission.
+                </p>
+                <form method="post" action="{% url 'loans:submit' loan.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-primary-sacco" style="width:100%;" 
+                        onclick="return confirm('Submit this loan application for review?')">
+                        <i class="bi bi-send"></i> Submit Application
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Admin Actions -->
+        {% if user.is_admin %}
+        <div class="content-card mb-4">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-gear me-2" style="color:#1a3a5c;"></i>Admin Actions</h5>
+            </div>
+            <div class="card-body-custom">
+
+                {% if loan.status == 'submitted' %}
+                <form method="post" action="{% url 'loans:action' loan.pk %}" class="mb-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="review">
+                    <button type="submit" class="btn-primary-sacco" style="width:100%;">
+                        <i class="bi bi-search"></i> Start Review
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if loan.status == 'under_review' %}
+                <!-- Approve Form -->
+                <div style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid #f1f5f9;">
+                    <div style="font-size:13px; font-weight:600; margin-bottom:10px; color:#059669;">
+                        <i class="bi bi-check-circle"></i> Approve Loan
+                    </div>
+                    <form method="post" action="{% url 'loans:action' loan.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="approve">
+                        <textarea name="notes" class="form-control-sacco" rows="2" placeholder="Notes (optional)" style="margin-bottom:10px;"></textarea>
+                        <button type="submit" class="btn-primary-sacco" style="width:100%; background:#059669;"
+                            onclick="return confirm('Approve this loan application?')">
+                            <i class="bi bi-check-circle"></i> Approve Loan
+                        </button>
+                    </form>
+                </div>
+                <!-- Reject Form -->
+                <div>
+                    <div style="font-size:13px; font-weight:600; margin-bottom:10px; color:#dc2626;">
+                        <i class="bi bi-x-circle"></i> Reject Loan
+                    </div>
+                    <form method="post" action="{% url 'loans:action' loan.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reject">
+                        <textarea name="rejection_reason" class="form-control-sacco" rows="2" placeholder="Reason for rejection (required)" required style="margin-bottom:10px;"></textarea>
+                        <button type="submit" style="width:100%; background:#dc2626; border:none; color:#fff; padding:10px; border-radius:10px; font-size:13.5px; font-weight:600; cursor:pointer;"
+                            onclick="return confirm('Reject this loan application?')">
+                            <i class="bi bi-x-circle"></i> Reject Loan
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+                {% if loan.status == 'approved' %}
+                <form method="post" action="{% url 'loans:action' loan.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="disburse">
+                    <div class="alert-sacco alert-info-sacco mb-3" style="font-size:13px;">
+                        <i class="bi bi-info-circle"></i>
+                        Disbursing will generate the full repayment schedule.
+                    </div>
+                    <button type="submit" class="btn-accent" style="width:100%;"
+                        onclick="return confirm('Disburse UGX {{ loan.amount_requested|floatformat:0 }} to {{ loan.applicant.get_full_name }}?')">
+                        <i class="bi bi-cash-coin"></i> Disburse Loan
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if loan.status == 'disbursed' %}
+                <div class="alert-sacco alert-info-sacco" style="font-size:13px;">
+                    <i class="bi bi-info-circle"></i>
+                    Loan is active. Record payments through the repayment schedule.
+                </div>
+                <a href="{% url 'repayments:loan_repayments' loan.pk %}" class="btn-primary-sacco" style="width:100%; justify-content:center; margin-top:12px;">
+                    <i class="bi bi-calendar-check"></i> Manage Repayments
+                </a>
+                {% endif %}
+
+                {% if loan.status in 'rejected,completed,draft' %}
+                <div style="text-align:center; color:#94a3b8; font-size:13px; padding:16px 0;">
+                    <i class="bi bi-info-circle" style="display:block; font-size:24px; margin-bottom:8px;"></i>
+                    No actions available for <strong>{{ loan.get_status_display }}</strong> status.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Applicant Info -->
+        <div class="content-card">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-person me-2"></i>Applicant Info</h5>
+            </div>
+            <div class="card-body-custom">
+                <div style="margin-bottom:10px;">
+                    <div style="font-size:11px; color:#94a3b8;">Full Name</div>
+                    <div style="font-size:13px; font-weight:600;">{{ loan.applicant.get_full_name }}</div>
+                </div>
+                <div style="margin-bottom:10px;">
+                    <div style="font-size:11px; color:#94a3b8;">Member No.</div>
+                    <div style="font-size:13px; font-weight:600; font-family:monospace;">{{ loan.applicant.member_number }}</div>
+                </div>
+                <div style="margin-bottom:10px;">
+                    <div style="font-size:11px; color:#94a3b8;">Phone</div>
+                    <div style="font-size:13px;">{{ loan.applicant.phone_number|default:"—" }}</div>
+                </div>
+                <div style="margin-bottom:10px;">
+                    <div style="font-size:11px; color:#94a3b8;">Occupation</div>
+                    <div style="font-size:13px;">{{ loan.applicant.occupation|default:"—" }}</div>
+                </div>
+                <div>
+                    <div style="font-size:11px; color:#94a3b8;">Monthly Income</div>
+                    <div class="money" style="font-size:13px; font-weight:600;">UGX {{ loan.applicant.monthly_income|floatformat:0 }}</div>
+                </div>
+                <a href="{% url 'accounts:member_detail' loan.applicant.pk %}" class="btn-ghost" style="width:100%; justify-content:center; margin-top:16px; font-size:12px;">
+                    View Full Profile
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

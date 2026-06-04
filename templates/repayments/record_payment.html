@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Record Payment{% endblock %}
+{% block page_title %}Record Payment{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Record Payment</h1>
+        <p>{{ repayment.loan.loan_id }} — Installment #{{ repayment.installment_number }}</p>
+    </div>
+    <a href="{% url 'repayments:loan_repayments' repayment.loan.pk %}" class="btn-ghost">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-cash-coin me-2" style="color:#059669;"></i>Payment Details</h5>
+            </div>
+            <div class="card-body-custom">
+                <!-- Info Summary -->
+                <div style="background:#f8fafc; border-radius:12px; padding:20px; margin-bottom:24px;">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div style="font-size:11px; color:#64748b;">Loan ID</div>
+                            <div style="font-size:14px; font-weight:700; font-family:monospace; color:#1a3a5c;">{{ repayment.loan.loan_id }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:11px; color:#64748b;">Installment #</div>
+                            <div style="font-size:14px; font-weight:700;">{{ repayment.installment_number }} of {{ repayment.loan.repayment_period }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:11px; color:#64748b;">Member</div>
+                            <div style="font-size:13px; font-weight:600;">{{ repayment.loan.applicant.get_full_name }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div style="font-size:11px; color:#64748b;">Due Date</div>
+                            <div style="font-size:13px; font-weight:600; {% if repayment.status == 'overdue' %}color:#dc2626;{% endif %}">
+                                {{ repayment.due_date|date:"d M Y" }}
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div style="font-size:11px; color:#64748b;">Amount Due</div>
+                            <div class="money" style="font-size:24px; font-weight:800; color:#1a3a5c;">
+                                UGX {{ repayment.amount_due|floatformat:0 }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label-sacco">Amount Paid (UGX) *</label>
+                        <input type="number" name="amount_paid" class="form-control-sacco"
+                            value="{{ repayment.amount_due }}"
+                            min="1" step="1000" required
+                            placeholder="Enter amount paid">
+                        <div style="font-size:12px; color:#64748b; margin-top:5px;">
+                            Expected: UGX {{ repayment.amount_due|floatformat:0 }}
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:12px;">
+                        <button type="submit" class="btn-primary-sacco" style="flex:1; justify-content:center;"
+                            onclick="return confirm('Record this payment?')">
+                            <i class="bi bi-check-circle"></i> Record Payment
+                        </button>
+                        <a href="{% url 'repayments:loan_repayments' repayment.loan.pk %}" class="btn-ghost">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

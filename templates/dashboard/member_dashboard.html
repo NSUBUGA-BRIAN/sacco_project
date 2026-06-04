@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}My Dashboard{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div style="background: linear-gradient(135deg, #1a3a5c, #2563a8); border-radius: 16px; padding: 28px; margin-bottom: 28px; display: flex; align-items: center; justify-content: space-between;">
+    <div>
+        <div style="font-size: 13px; color: rgba(255,255,255,0.65); margin-bottom: 6px;">Welcome back</div>
+        <div style="font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 4px;">
+            {{ user.get_full_name|default:user.username }}
+        </div>
+        <div style="font-size: 13px; color: rgba(255,255,255,0.6);">
+            {{ user.member_number }} &nbsp;·&nbsp; {{ user.occupation|default:"SACCO Member" }}
+        </div>
+    </div>
+    <a href="{% url 'loans:apply' %}" style="background: #f59e0b; border: none; color: #fff; padding: 12px 22px; border-radius: 12px; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap;">
+        <i class="bi bi-plus-circle me-2"></i>Apply for Loan
+    </a>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#dbeafe;"><i class="bi bi-credit-card" style="color:#2563eb;"></i></div>
+            <div class="stat-value">{{ active_loans_count }}</div>
+            <div class="stat-label">Active Loans</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fef3c7;"><i class="bi bi-clock" style="color:#d97706;"></i></div>
+            <div class="stat-value">{{ pending_loans_count }}</div>
+            <div class="stat-label">Pending</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#d1fae5;"><i class="bi bi-check-circle" style="color:#059669;"></i></div>
+            <div class="stat-value">{{ completed_loans_count }}</div>
+            <div class="stat-label">Completed</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:{% if overdue_count > 0 %}#fee2e2{% else %}#d1fae5{% endif %};">
+                <i class="bi bi-exclamation-triangle" style="color:{% if overdue_count > 0 %}#dc2626{% else %}#059669{% endif %};"></i>
+            </div>
+            <div class="stat-value" style="color: {% if overdue_count > 0 %}#dc2626{% endif %};">{{ overdue_count }}</div>
+            <div class="stat-label">Overdue</div>
+        </div>
+    </div>
+</div>
+
+<!-- Financial Summary -->
+{% if total_borrowed %}
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="stat-card d-flex align-items-center gap-3">
+            <div class="stat-icon" style="background:#e0f2fe; margin-bottom:0; flex-shrink:0;">
+                <i class="bi bi-bank" style="color:#0284c7;"></i>
+            </div>
+            <div>
+                <div class="stat-value" style="font-size:18px;">UGX {{ total_borrowed|floatformat:0 }}</div>
+                <div class="stat-label">Total Borrowed</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="stat-card d-flex align-items-center gap-3">
+            <div class="stat-icon" style="background:#fef3c7; margin-bottom:0; flex-shrink:0;">
+                <i class="bi bi-wallet2" style="color:#d97706;"></i>
+            </div>
+            <div>
+                <div class="stat-value" style="font-size:18px;">UGX {{ total_remaining|floatformat:0 }}</div>
+                <div class="stat-label">Remaining Balance</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Overdue Alert -->
+{% if overdue_count > 0 %}
+<div class="alert-sacco alert-danger-sacco mb-4">
+    <i class="bi bi-exclamation-triangle"></i>
+    You have <strong>{{ overdue_count }}</strong> overdue payment(s). Please make payment as soon as possible to avoid penalties.
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Upcoming Payments -->
+    <div class="col-md-6">
+        <div class="content-card h-100">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-calendar-event me-2" style="color:#d97706;"></i>Upcoming Payments</h5>
+                <a href="{% url 'repayments:list' %}" class="btn-ghost" style="font-size:12px; padding:6px 14px;">View All</a>
+            </div>
+            <div class="card-body-custom">
+                {% for repayment in upcoming_repayments %}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:#1e293b;">{{ repayment.loan.loan_id }}</div>
+                        <div style="font-size:11px; color:#64748b;">Due: {{ repayment.due_date|date:"d M Y" }}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div class="money" style="font-size:13px; font-weight:700; color:#1e293b;">
+                            UGX {{ repayment.amount_due|floatformat:0 }}
+                        </div>
+                        <span class="status-badge badge-pending" style="font-size:10px;">Pending</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align:center; padding: 32px; color:#94a3b8;">
+                    <i class="bi bi-calendar-check" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+                    No upcoming payments in the next 30 days.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- My Loans -->
+    <div class="col-md-6">
+        <div class="content-card h-100">
+            <div class="card-header-custom">
+                <h5><i class="bi bi-credit-card me-2" style="color:#2563eb;"></i>My Loans</h5>
+                <a href="{% url 'loans:list' %}" class="btn-ghost" style="font-size:12px; padding:6px 14px;">View All</a>
+            </div>
+            <div class="card-body-custom">
+                {% for loan in loans %}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                    <div>
+                        <a href="{% url 'loans:detail' loan.pk %}" style="font-size:13px; font-weight:700; color:#1a3a5c; text-decoration:none; font-family:monospace;">
+                            {{ loan.loan_id }}
+                        </a>
+                        <div style="font-size:11px; color:#64748b;">{{ loan.application_date|date:"d M Y" }}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div class="money" style="font-size:13px; font-weight:700;">
+                            UGX {{ loan.amount_requested|floatformat:0 }}
+                        </div>
+                        <span class="status-badge badge-{{ loan.status }}" style="font-size:10px;">{{ loan.get_status_display }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align:center; padding: 32px; color:#94a3b8;">
+                    <i class="bi bi-inbox" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+                    No loans yet. <a href="{% url 'loans:apply' %}" style="color:#2563eb;">Apply now</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

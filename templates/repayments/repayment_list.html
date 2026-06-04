@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Repayments{% endblock %}
+{% block page_title %}Repayment Tracking{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Repayments</h1>
+        <p>{% if user.is_admin %}Track all loan repayment installments{% else %}Your payment schedule and history{% endif %}</p>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="content-card mb-4">
+    <div class="card-body-custom" style="padding:16px 24px;">
+        <form method="get" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:13px; font-weight:600; color:#64748b;">Filter:</span>
+            <a href="{% url 'repayments:list' %}" class="status-badge badge-disbursed" style="text-decoration:none; opacity:{% if not status_filter %}1{% else %}0.5{% endif %};">All</a>
+            {% for value, label in status_choices %}
+            <a href="?status={{ value }}" class="status-badge badge-{{ value }}" style="text-decoration:none; opacity:{% if status_filter == value or not status_filter %}1{% else %}0.5{% endif %};">
+                {{ label }}
+            </a>
+            {% endfor %}
+        </form>
+    </div>
+</div>
+
+<div class="content-card">
+    <div style="overflow-x:auto;">
+        <table class="sacco-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Loan ID</th>
+                    {% if user.is_admin %}<th>Member</th>{% endif %}
+                    <th>Amount Due</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Paid Date</th>
+                    <th>Remaining</th>
+                    {% if user.is_admin %}<th>Action</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for repayment in repayments %}
+                <tr {% if repayment.status == 'overdue' %}style="background:#fff5f5;"{% endif %}>
+                    <td style="font-weight:700; color:#64748b;">{{ repayment.installment_number }}</td>
+                    <td>
+                        <a href="{% url 'loans:detail' repayment.loan.pk %}" style="font-family:monospace; font-weight:700; color:#1a3a5c; text-decoration:none; font-size:13px;">
+                            {{ repayment.loan.loan_id }}
+                        </a>
+                    </td>
+                    {% if user.is_admin %}
+                    <td style="font-size:13px;">{{ repayment.loan.applicant.get_full_name }}</td>
+                    {% endif %}
+                    <td class="money" style="font-weight:700;">UGX {{ repayment.amount_due|floatformat:0 }}</td>
+                    <td style="font-size:13px; {% if repayment.status == 'overdue' %}color:#dc2626; font-weight:600;{% endif %}">
+                        {{ repayment.due_date|date:"d M Y" }}
+                        {% if repayment.status == 'overdue' %}
+                        <div style="font-size:11px;">
+                            <i class="bi bi-exclamation-circle"></i> Overdue
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td><span class="status-badge badge-{{ repayment.status }}">{{ repayment.get_status_display }}</span></td>
+                    <td style="font-size:13px; color:#64748b;">
+                        {% if repayment.paid_date %}{{ repayment.paid_date|date:"d M Y" }}{% else %}—{% endif %}
+                    </td>
+                    <td class="money" style="font-size:13px; {% if repayment.remaining_balance > 0 %}color:#d97706;{% else %}color:#059669;{% endif %}">
+                        UGX {{ repayment.remaining_balance|floatformat:0 }}
+                    </td>
+                    {% if user.is_admin %}
+                    <td>
+                        {% if repayment.status != 'paid' %}
+                        <a href="{% url 'repayments:record_payment' repayment.pk %}" class="btn-ghost" style="font-size:12px; padding:5px 12px;">
+                            <i class="bi bi-cash"></i> Record
+                        </a>
+                        {% else %}
+                        <span style="color:#059669; font-size:12px;"><i class="bi bi-check-circle"></i></span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{% if user.is_admin %}9{% else %}7{% endif %}" style="text-align:center; padding:60px; color:#94a3b8;">
+                        <i class="bi bi-calendar-x" style="font-size:40px; display:block; margin-bottom:12px;"></i>
+                        No repayments found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

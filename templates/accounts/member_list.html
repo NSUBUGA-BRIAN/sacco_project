@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Members{% endblock %}
+{% block page_title %}Members{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>SACCO Members</h1>
+        <p>{{ members.count }} registered members</p>
+    </div>
+</div>
+
+<div class="content-card">
+    <div style="overflow-x:auto;">
+        <table class="sacco-table">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Member No.</th>
+                    <th>Phone</th>
+                    <th>Occupation</th>
+                    <th>Income (UGX)</th>
+                    <th>Joined</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in members %}
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="avatar-sm">{{ member.first_name|first }}{{ member.last_name|first }}</div>
+                            <div>
+                                <div style="font-size:13px; font-weight:600;">{{ member.get_full_name }}</div>
+                                <div style="font-size:11px; color:#94a3b8;">{{ member.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-family:monospace; font-size:13px; font-weight:600; color:#1a3a5c;">{{ member.member_number }}</td>
+                    <td style="font-size:13px;">{{ member.phone_number|default:"—" }}</td>
+                    <td style="font-size:13px;">{{ member.occupation|default:"—" }}</td>
+                    <td class="money" style="font-size:13px; font-weight:600;">{{ member.monthly_income|floatformat:0 }}</td>
+                    <td style="font-size:12px; color:#64748b;">{{ member.date_joined|date:"d M Y" }}</td>
+                    <td>
+                        {% if member.is_active %}
+                        <span class="status-badge badge-approved">Active</span>
+                        {% else %}
+                        <span class="status-badge badge-rejected">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <a href="{% url 'accounts:member_detail' member.pk %}" class="btn-ghost" style="font-size:11px; padding:5px 10px;">View</a>
+                            <a href="{% url 'accounts:toggle_status' member.pk %}" class="btn-ghost" style="font-size:11px; padding:5px 10px; color:{% if member.is_active %}#dc2626{% else %}#059669{% endif %};"
+                                onclick="return confirm('{% if member.is_active %}Deactivate{% else %}Activate{% endif %} {{ member.get_full_name }}?')">
+                                {% if member.is_active %}Deactivate{% else %}Activate{% endif %}
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:60px; color:#94a3b8;">
+                        <i class="bi bi-people" style="font-size:40px; display:block; margin-bottom:12px;"></i>
+                        No members registered yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
