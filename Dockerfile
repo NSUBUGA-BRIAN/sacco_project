@@ -8,7 +8,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY sacco_project/requirements.txt /app/requirements.txt
+COPY requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip \
     && pip install -r /app/requirements.txt
 
@@ -20,7 +20,7 @@ WORKDIR /app/sacco_project
 RUN python manage.py collectstatic --noinput || true
 
 # Add start script
-COPY sacco_project/start.sh /app/sacco_project/start.sh
+COPY start.sh /app/sacco_project/start.sh
 RUN chmod +x /app/sacco_project/start.sh
 
 EXPOSE 8000

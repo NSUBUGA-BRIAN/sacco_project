@@ -5,14 +5,28 @@ SACCO Loan Management System - Django Settings
 import os
 from pathlib import Path
 from decouple import config
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-sacco-dev-key-change-in-production-xyz123')
 
-DEBUG = config('DEBUG', default=True, cast=bool)
+# Set DEBUG default to False for production; override via env in Render if needed
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
+
+# Production security hardening (tweak via environment variables)
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = int(config('SECURE_HSTS_SECONDS', default=31536000))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# Media: for persistent file storage use S3 or another object store.
+# To enable, install `boto3` and `django-storages` and set:
+# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 # Application definition
 INSTALLED_APPS = [
@@ -69,14 +83,11 @@ WSGI_APPLICATION = 'sacco_core.wsgi.application'
 
 # Database - SQLite for easy local dev, PostgreSQL for production
 DATABASES = {
-    'default': {
-        'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
-        'NAME': config('DB_NAME', default=str(BASE_DIR / 'db.sqlite3')),
-        'USER': config('DB_USER', default=''),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default=''),
-        'PORT': config('DB_PORT', default=''),
-    }
+    'default': dj_database_url.parse(
+        config('DATABASE_URL', default='sqlite:///' + str(BASE_DIR / 'db.sqlite3')),
+        conn_max_age=600,
+        
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
