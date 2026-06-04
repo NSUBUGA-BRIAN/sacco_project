@@ -6,6 +6,9 @@ set -e
 echo "Running migrations..."
 python manage.py migrate --noinput || true
 
+echo "Creating default loan types..."
+python manage.py create_default_loan_types || true
+
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
